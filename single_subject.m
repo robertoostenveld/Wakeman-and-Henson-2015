@@ -13,6 +13,8 @@ eval(sprintf('subj%02d', subject));
 mri = ft_read_mri(mrifile);
 ft_determine_coordsys(mri, 'interactive', false);
 
+save(fullfile(outputpath, 'mri'), 'mri');
+
 grad = ft_read_sens(megfile{1}, 'senstype', 'meg');
 elec = ft_read_sens(megfile{1}, 'senstype', 'eeg');
 headshape = ft_read_headshape(megfile{1});
@@ -40,18 +42,23 @@ cfg.coordsys = 'neuromag';
 cfg.fiducial.nas = ft_warp_apply(inv(mri.transform), NAS);
 cfg.fiducial.lpa = ft_warp_apply(inv(mri.transform), LPA);
 cfg.fiducial.rpa = ft_warp_apply(inv(mri.transform), RPA);
+cfg.inputfile = fullfile(outputpath, 'mri');
 cfg.outputfile = fullfile(outputpath, 'mri_realigned');
-mri_realigned = ft_volumerealign(cfg, mri);
+mri_realigned = ft_volumerealign(cfg);
 
 cfg = [];
+cfg.inputfile = fullfile(outputpath, 'mri_realigned');
 cfg.outputfile = fullfile(outputpath, 'mri_resliced');
-mri_resliced = ft_volumereslice(cfg, mri_realigned);
+mri_resliced = ft_volumereslice(cfg);
 
 % do another check on the coregistration
 ft_determine_coordsys(mri_realigned, 'interactive', false);
 ft_plot_sens(grad, 'unit', 'mm', 'edgecolor', 'm');
 ft_plot_sens(elec, 'unit', 'mm');
 ft_plot_headshape(headshape, 'unit', 'mm');
+view([1 0 0])
+% save the figyre for quality control
+print('-dpng', fullfile(outputpath, 'coregistration.png'));
 
 %% Reading and reviewing the functional data
 
@@ -121,37 +128,47 @@ cfg = [];
 cfg.method = 'pca';
 cfg.updatesens = 'no';
 cfg.channel = 'meggrad';
+cfg.inputfile = fullfile(outputpath, 'raw');
 cfg.outputfile = fullfile(outputpath, 'comp');
-comp = ft_componentanalysis(cfg, raw);
+comp = ft_componentanalysis(cfg);
  
 cfg = [];
 cfg.updatesens = 'no';
 cfg.component = comp.label(51:end);
+cfg.inputfile = fullfile(outputpath, 'comp');
 cfg.outputfile = fullfile(outputpath, 'raw_subspace');
-raw_subspace = ft_rejectcomponent(cfg, comp);
+raw_subspace = ft_rejectcomponent(cfg);
 
 cfg = [];
 cfg.baselinewindow = [-inf 0];
 cfg.demean = 'yes';
+cfg.inputfile = fullfile(outputpath, 'raw_subspace_demean');
 cfg.outputfile = fullfile(outputpath, 'raw_subspace_demean');
-raw_subspace_demean = ft_preprocessing(cfg, raw_subspace);
+raw_subspace_demean = ft_preprocessing(cfg);
 
 %% Data reviewing and artifact handling
 
 % start with a copy
 raw_clean = raw_subspace_demean;
- 
+ save(fullfile(outputpath, 'raw_clean'), 'raw_clean');
+
 cfg = [];
 cfg.keeptrial = 'no';
 cfg.keepchannel = 'yes';
 
 cfg.channel = 'meggrad';
+cfg.inputfile = fullfile(outputpath, 'raw_clean');
+cfg.outputfile = fullfile(outputpath, 'raw_clean');
 raw_clean = ft_rejectvisual(cfg, raw_clean);
 
 % cfg.channel = 'megmag';
+% cfg.inputfile = fullfile(outputpath, 'raw_clean');
+% cfg.outputfile = fullfile(outputpath, 'raw_clean');
 % raw_clean = ft_rejectvisual(cfg, raw_clean);
 
 % cfg.channel = 'eeg';
+% cfg.inputfile = fullfile(outputpath, 'raw_clean');
+% cfg.outputfile = fullfile(outputpath, 'raw_clean');
 % raw_clean = ft_rejectvisual(cfg, raw_clean);
 
 
@@ -162,17 +179,23 @@ raw_clean = ft_rejectvisual(cfg, raw_clean);
 % scrambled  = 3
 
 cfg = [];
+cfg.inputfile = fullfile(outputpath, 'raw_clean');
+
 cfg.trials = find(raw_clean.trialinfo(:,2)==1);
-timelock_famous = ft_timelockanalysis(cfg, raw_clean);
+cfg.outputfile = fullfile(outputpath, 'timelock_famous');
+timelock_famous = ft_timelockanalysis(cfg);
 
 cfg.trials = find(raw_clean.trialinfo(:,2)==2);
-timelock_unfamiliar = ft_timelockanalysis(cfg, raw_clean);
+cfg.outputfile = fullfile(outputpath, 'timelock_unfamiliar');
+timelock_unfamiliar = ft_timelockanalysis(cfg);
 
 cfg.trials = find(raw_clean.trialinfo(:,2)==3);
-timelock_scrambled = ft_timelockanalysis(cfg, raw_clean);
+cfg.outputfile = fullfile(outputpath, 'timelock_scrambled');
+timelock_scrambled = ft_timelockanalysis(cfg);
 
 cfg.trials = find(raw_clean.trialinfo(:,2)==1 | raw_clean.trialinfo(:,2)==2);
-timelock_faces = ft_timelockanalysis(cfg, raw_clean);
+cfg.outputfile = fullfile(outputpath, 'timelock_faces');
+timelock_faces = ft_timelockanalysis(cfg);
 
 %% Visualization
 
@@ -220,8 +243,9 @@ cfg.gwidth = 2;
 cfg.keeptrials = 'yes';
 cfg.toi = -0.5:0.02:1.2;
 cfg.foi = 2:2:50;
+cfg.inputfile = fullfile(outputpath, 'raw_clean');
 cfg.outputfile = fullfile(outputpath, 'freq');
-freq = ft_freqanalysis(cfg, raw_clean);
+freq = ft_freqanalysis(cfg);
 
 % compute selective averages
 
