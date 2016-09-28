@@ -1,9 +1,9 @@
 do_explore        = false;
 do_anatomy        = false;
 do_preprocessing  = false;
-do_artefacts      = true;
-do_timelock       = false;
-do_frequency      = false;
+do_artefacts      = false;
+do_timelock       = true;
+do_frequency      = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Reading and converting the original data files
@@ -173,16 +173,17 @@ if do_artefacts
   
   % start with a copy, iterate multiple times
   load(fullfile(outputpath, 'raw_subspace_demean'));
-  save(fullfile(outputpath, 'raw_clean'), 'data');
+  % save(fullfile(outputpath, 'raw_clean'), 'data');
+  raw_clean = data;
   
   cfg = [];
   cfg.keeptrial = 'no';
   cfg.keepchannel = 'yes';
   
   cfg.channel = 'meggrad';
-  cfg.inputfile = fullfile(outputpath, 'raw_clean');
+  % cfg.inputfile = fullfile(outputpath, 'raw_clean');
   cfg.outputfile = fullfile(outputpath, 'raw_clean');
-  raw_clean = ft_rejectvisual(cfg);
+  raw_clean = ft_rejectvisual(cfg, raw_clean);
   
   % cfg.channel = 'megmag';
   % cfg.inputfile = fullfile(outputpath, 'raw_clean');
@@ -196,10 +197,17 @@ if do_artefacts
   
 end % do artefacts
 
+
+if do_timelock || do_frequency
+  % both need the cleaned preprocessed data
+  load(fullfile(outputpath, 'raw_clean'));
+  raw_clean = data;
+end
+
 if do_timelock
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% Averaging and Event-Related Fields
-  
+
   % famous     = 1
   % unfamiliar = 2
   % scrambled  = 3
