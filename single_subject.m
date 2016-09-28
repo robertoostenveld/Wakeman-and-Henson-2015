@@ -76,9 +76,9 @@ ft_databrowser(cfg);
 % Unfamiliar faces: 13 (01101), 14 (01110), 15 (01111) => Bit 3 and 4
 % Scrambled images: 17 (10001), 18 (10010), 19 (10011) => Bit 5 only
 
-% the MEG+EEG data is acquired in 6 blocks, each represented by a single file
+% the MEG+EEG data is acquired in 6 blocks, each represented in a single file
 
-raw = {};
+block = {};
 for i=1:6
 
   cfg = [];
@@ -107,17 +107,19 @@ for i=1:6
   cfg.channel = 'meggrad';
   cfg.baselinewindow = [-inf 0];
   cfg.demean = 'yes';
-  raw{i} = ft_preprocessing(cfg);
+  block{i} = ft_preprocessing(cfg);
   
 end
 
 % show the two different types of trial codes
-disp(raw{1}.trialinfo);
+disp(block{1}.trialinfo);
 
 % combine all six blocks into a single 
 cfg = [];
 cfg.outputfile = fullfile(outputpath, 'raw');
-raw = ft_appenddata(cfg, raw{:});
+raw = ft_appenddata(cfg, block{:});
+
+clear block
 
 %% deal with maxfiltering
 
@@ -250,16 +252,22 @@ freq = ft_freqanalysis(cfg);
 % compute selective averages
 
 cfg = [];
+cfg.inputfile = fullfile(outputpath, 'freq');
+
 cfg.trials = find(freq.trialinfo(:,2)==1);
+cfg.outputfile = fullfile(outputpath, 'freq_famous');
 freq_famous = ft_freqdescriptives(cfg, freq);
 
 cfg.trials = find(freq.trialinfo(:,2)==2);
+cfg.outputfile = fullfile(outputpath, 'freq_unfamiliar');
 freq_unfamiliar = ft_freqdescriptives(cfg, freq);
 
 cfg.trials = find(freq.trialinfo(:,2)==3);
+cfg.outputfile = fullfile(outputpath, 'freq_scrambled');
 freq_scrambled = ft_freqdescriptives(cfg, freq);
 
 cfg.trials = find(freq.trialinfo(:,2)==1 | freq.trialinfo(:,2)==1);
+cfg.outputfile = fullfile(outputpath, 'freq_faces');
 freq_faces = ft_freqdescriptives(cfg, freq);
 
 %% Visualization
