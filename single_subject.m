@@ -1,7 +1,7 @@
 
 %% get the subject specific information, such as file names
 subject = 1;
-eval(sprintf('subj%02d', subject));
+eval(sprintf('details_sub%02d', subject));
 
 %%%%%%%%%%%
 %% Reading and converting the original data files
