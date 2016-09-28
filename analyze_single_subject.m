@@ -1,8 +1,4 @@
 
-%% get the subject specific information, such as file names
-subject = 1;
-eval(sprintf('details_sub%02d', subject));
-
 %%%%%%%%%%%
 %% Reading and converting the original data files
 
@@ -150,9 +146,8 @@ raw_subspace_demean = ft_preprocessing(cfg);
 
 %% Data reviewing and artifact handling
 
-% start with a copy
+% start with a copy, iterate multiple times
 raw_clean = raw_subspace_demean;
-
 save(fullfile(outputpath, 'raw_clean'), 'raw_clean');
 
 cfg = [];
@@ -162,17 +157,17 @@ cfg.keepchannel = 'yes';
 cfg.channel = 'meggrad';
 cfg.inputfile = fullfile(outputpath, 'raw_clean');
 cfg.outputfile = fullfile(outputpath, 'raw_clean');
-raw_clean = ft_rejectvisual(cfg, raw_clean);
+raw_clean = ft_rejectvisual(cfg);
 
 % cfg.channel = 'megmag';
 % cfg.inputfile = fullfile(outputpath, 'raw_clean');
 % cfg.outputfile = fullfile(outputpath, 'raw_clean');
-% raw_clean = ft_rejectvisual(cfg, raw_clean);
+% raw_clean = ft_rejectvisual(cfg);
 
 % cfg.channel = 'eeg';
 % cfg.inputfile = fullfile(outputpath, 'raw_clean');
 % cfg.outputfile = fullfile(outputpath, 'raw_clean');
-% raw_clean = ft_rejectvisual(cfg, raw_clean);
+% raw_clean = ft_rejectvisual(cfg);
 
 
 %% Averaging and Event-Related Fields
