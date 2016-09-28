@@ -1,8 +1,22 @@
 subject = 11;
 
+%% specify the root location of all files (can be on a network or USB disk)
+
+dataprefix = {
+  '/Volumes/BIOMAG2016/biomag2016'
+  '/Volumes/128GB/workshop/biomag2016'
+  '/project_ext/3010029/biomag2016'
+};
+
+for i=1:numel(dataprefix)
+  if isdir(dataprefix{i})
+    dataprefix = dataprefix{i};
+    break
+  end % if
+end % for
+
 %% specify the location of the input and output files
 
-dataprefix = '/Volumes/128GB/workshop/biomag2016'
 outputpath = sprintf('%s/processed/Sub%02d', dataprefix, subject);
 megpath    = sprintf('%s/raw/Sub%02d/MEEG/', dataprefix, subject);
 mripath    = sprintf('%s/raw/Sub%02d/T1/',   dataprefix, subject);
