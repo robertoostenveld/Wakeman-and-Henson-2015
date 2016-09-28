@@ -1,0 +1,2 @@
+details_sub08
+analyze_single_subject
