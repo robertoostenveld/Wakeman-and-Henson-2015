@@ -1,7 +1,7 @@
 do_explore        = false;
 do_anatomy        = false;
-do_preprocessing  = true;
-do_artefacts      = false;
+do_preprocessing  = false;
+do_artefacts      = true;
 do_timelock       = false;
 do_frequency      = false;
 
@@ -173,8 +173,7 @@ if do_artefacts
   
   % start with a copy, iterate multiple times
   load(fullfile(outputpath, 'raw_subspace_demean'));
-  raw_clean = data;
-  save(fullfile(outputpath, 'raw_clean'), 'raw_clean');
+  save(fullfile(outputpath, 'raw_clean'), 'data');
   
   cfg = [];
   cfg.keeptrial = 'no';
@@ -197,7 +196,7 @@ if do_artefacts
   
 end % do artefacts
 
-if do_timelockanalysis
+if do_timelock
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% Averaging and Event-Related Fields
   
@@ -261,9 +260,9 @@ if do_timelockanalysis
   figure
   ft_multiplotER(cfg, famous_vs_unfamiliar_cmb);
   
-end % do timelockanalysis
+end % do timelock
 
-if do_frequencyanalysis
+if do_frequency
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% Time-frequency analysis
   
@@ -323,5 +322,5 @@ if do_frequencyanalysis
   figure
   ft_multiplotTFR(cfg, freq_faces_cmb);
   
-end % do frequencyanalysis
+end % do frequency
 
