@@ -80,10 +80,10 @@ ft_databrowser(cfg);
 
 block = {};
 for i=1:6
-
+  
   cfg = [];
   cfg.dataset = megfile{i};
-
+  
   cfg.trialfun = 'ft_trialfun_general';
   cfg.trialdef.eventtype = 'STI101';
   cfg.trialdef.eventvalue = [5 6 7 13 14 15 17 18 19];
@@ -114,7 +114,7 @@ end
 % show the two different types of trial codes
 disp(block{1}.trialinfo);
 
-% combine all six blocks into a single 
+% combine all six blocks into a single
 cfg = [];
 cfg.outputfile = fullfile(outputpath, 'raw');
 raw = ft_appenddata(cfg, block{:});
@@ -125,7 +125,7 @@ clear block
 
 % the data has been maxfiltered and subsequently contatenated
 % this will result in an ill-conditioned estimate of covariance or CSD
- 
+
 cfg = [];
 cfg.method = 'pca';
 cfg.updatesens = 'no';
@@ -133,7 +133,7 @@ cfg.channel = 'meggrad';
 cfg.inputfile = fullfile(outputpath, 'raw');
 cfg.outputfile = fullfile(outputpath, 'comp');
 comp = ft_componentanalysis(cfg);
- 
+
 cfg = [];
 cfg.updatesens = 'no';
 cfg.component = comp.label(51:end);
@@ -144,7 +144,7 @@ raw_subspace = ft_rejectcomponent(cfg);
 cfg = [];
 cfg.baselinewindow = [-inf 0];
 cfg.demean = 'yes';
-cfg.inputfile = fullfile(outputpath, 'raw_subspace_demean');
+cfg.inputfile = fullfile(outputpath, 'raw_subspace');
 cfg.outputfile = fullfile(outputpath, 'raw_subspace_demean');
 raw_subspace_demean = ft_preprocessing(cfg);
 
@@ -152,7 +152,8 @@ raw_subspace_demean = ft_preprocessing(cfg);
 
 % start with a copy
 raw_clean = raw_subspace_demean;
- save(fullfile(outputpath, 'raw_clean'), 'raw_clean');
+
+save(fullfile(outputpath, 'raw_clean'), 'raw_clean');
 
 cfg = [];
 cfg.keeptrial = 'no';
