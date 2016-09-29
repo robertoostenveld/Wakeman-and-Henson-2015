@@ -14,7 +14,7 @@ do_frequency      = true;
 if do_anatomy
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% Reading and reviewing the anatomical MRI
-
+  
   mri = ft_read_mri(mrifile);
   ft_determine_coordsys(mri, 'interactive', false);
   
@@ -74,14 +74,14 @@ end % do anatomy
 if do_explore
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% Reading and reviewing the functional data
-
+  
   cfg = [];
   cfg.dataset = megfile{1};
   cfg.channel = 'MEG';
   cfg.viewmode = 'vertical';
   cfg.layout = 'neuromag306all.lay';
   ft_databrowser(cfg);
-
+  
 end % do explore
 
 if do_preprocessing
@@ -207,7 +207,7 @@ end
 if do_timelock
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% Averaging and Event-Related Fields
-
+  
   % famous     = 1
   % unfamiliar = 2
   % scrambled  = 3
@@ -285,11 +285,11 @@ if do_frequency
   cfg.outputfile = fullfile(outputpath, 'freq');
   freq = ft_freqanalysis(cfg);
   
-  % compute selective averages
+  %% compute selective averages
+  
+  load(fullfile(outputpath, 'freq'));
   
   cfg = [];
-  cfg.inputfile = fullfile(outputpath, 'freq');
-  
   cfg.trials = find(freq.trialinfo(:,2)==1);
   cfg.outputfile = fullfile(outputpath, 'freq_famous');
   freq_famous = ft_freqdescriptives(cfg, freq);
@@ -306,13 +306,21 @@ if do_frequency
   cfg.outputfile = fullfile(outputpath, 'freq_faces');
   freq_faces = ft_freqdescriptives(cfg, freq);
   
-  %% Visualization
+  %% Combine planar and do visualization
   
   cfg = [];
-  freq_famous_cmb     = ft_combineplanar(cfg, freq_famous);
-  freq_unfamiliar_cmb = ft_combineplanar(cfg, freq_unfamiliar);
-  freq_scrambled_cmb  = ft_combineplanar(cfg, freq_scrambled);
-  freq_faces_cmb      = ft_combineplanar(cfg, freq_faces);
+  cfg.inputfile = fullfile(outputpath, 'freq_famous');
+  cfg.outputfile = fullfile(outputpath, 'freq_famous_cmb');
+  freq_famous_cmb     = ft_combineplanar(cfg);
+  cfg.inputfile = fullfile(outputpath, 'freq_unfamiliar');
+  cfg.outputfile = fullfile(outputpath, 'freq_unfamiliar_cmb');
+  freq_unfamiliar_cmb = ft_combineplanar(cfg);
+  cfg.inputfile = fullfile(outputpath, 'freq_scrambled');
+  cfg.outputfile = fullfile(outputpath, 'freq_scrambled_cmb');
+  freq_scrambled_cmb  = ft_combineplanar(cfg);
+  cfg.inputfile = fullfile(outputpath, 'freq_faces');
+  cfg.outputfile = fullfile(outputpath, 'freq_faces_cmb');
+  freq_faces_cmb      = ft_combineplanar(cfg);
   
   cfg = [];
   cfg.layout = 'neuromag306cmb';
