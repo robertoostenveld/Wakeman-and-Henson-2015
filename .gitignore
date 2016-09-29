@@ -1,2 +1,4 @@
 raw
 processed
+STDIN.e*
+STDIN.o*
