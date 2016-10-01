@@ -2,3 +2,5 @@ raw
 processed
 STDIN.e*
 STDIN.o*
+*.m~
+*.bak
