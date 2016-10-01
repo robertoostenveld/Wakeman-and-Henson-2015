@@ -1,7 +1,7 @@
-do_explore        = false;
-do_anatomy        = false;
-do_preprocessing  = false;
-do_artefacts      = false;
+do_explore        = true;
+do_anatomy        = true;
+do_preprocessing  = true;
+do_artefacts      = true;
 do_timelock       = true;
 do_frequency      = true;
 
@@ -62,7 +62,7 @@ if do_anatomy
   % do another check on the coregistration
   ft_determine_coordsys(mri_realigned, 'interactive', false);
   ft_plot_sens(grad, 'unit', 'mm', 'edgecolor', 'm');
-  ft_plot_sens(elec, 'unit', 'mm');
+  ft_plot_sens(elec, 'unit', 'mm', 'edgecolor', 'y');
   ft_plot_headshape(headshape, 'unit', 'mm');
   view([1 0 0])
   
