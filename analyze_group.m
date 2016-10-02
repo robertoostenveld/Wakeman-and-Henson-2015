@@ -96,13 +96,24 @@ h = imagesc(-log10(stat_cmb_faces_vs_scrambled.prob)); colorbar
 set(h, 'AlphaData', stat_cmb_faces_vs_scrambled.mask);
 print('-dpng', fullfile(outputprefix, 'stat_cmb_faces_vs_scrambled.png'));
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% more detailled visualisation
+
+%% compute the condition difference
 cfg = [];
 cfg.parameter = 'avg';
 cfg.operation = 'x1-x2';
 diff_cmb_faces_vs_scrambled = ft_math(cfg, timelock_faces_cmb_ga, timelock_scrambled_cmb_ga);
+diff_cmb_famous_vs_unfamiliar = ft_math(cfg, timelock_famous_cmb_ga, timelock_unfamiliar_cmb_ga);
+
+% save the results
+save(fullfile(outputprefix, 'diff_cmb_faces_vs_scrambled'), 'diff_cmb_faces_vs_scrambled');
+save(fullfile(outputprefix, 'diff_cmb_famous_vs_unfamiliar'), 'diff_cmb_famous_vs_unfamiliar');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% more detailled visualisation
+
+% add the statistical mask to the data
 diff_cmb_faces_vs_scrambled.mask = stat_cmb_faces_vs_scrambled.mask;
+diff_cmb_famous_vs_unfamiliar.mask = stat_cmb_famous_vs_unfamiliar.mask;
 
 cfg = [];
 cfg.layout = 'neuromag306cmb';
@@ -110,7 +121,11 @@ cfg.parameter = 'avg';
 cfg.maskparameter = 'mask';
 figure
 ft_multiplotER(cfg, diff_cmb_faces_vs_scrambled);
-print('-dpng', fullfile(outputprefix, 'diff_cmb_faces_vs_scrambled.png'));
+print('-dpng', fullfile(outputprefix, 'diff_cmb_faces_vs_scrambled_stat.png'));
+
+figure
+ft_multiplotER(cfg, diff_cmb_famous_vs_unfamiliar);
+print('-dpng', fullfile(outputprefix, 'diff_cmb_famous_vs_unfamiliar_stat.png'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% determine the neighbours that we consider to share evidence in favour of H1
@@ -122,10 +137,14 @@ cfg.neighbourdist = 0.15;
 cfg.feedback = 'yes';
 neighbours_cmb = ft_prepare_neighbours(cfg); % this is an example of a poor neighbourhood definition
 
+print('-dpng', fullfile(outputprefix, 'neighbours_cmb_distance.png'));
+
 cfg.layout = 'neuromag306cmb';
 cfg.method = 'triangulation';
 cfg.feedback = 'yes';
 neighbours_cmb = ft_prepare_neighbours(cfg); % this one is better, but could use some manual adjustments
+
+print('-dpng', fullfile(outputprefix, 'neighbours_cmb_triangulation.png'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% do a more sensitive channel-level statistical analysis
@@ -149,6 +168,25 @@ cluster_cmb_famous_vs_unfamiliar = ft_timelockstatistics(cfg, timelock_famous_cm
 % this is a very lengthy step, hence save the results
 save(fullfile(outputprefix, 'cluster_cmb_faces_vs_scrambled'), 'cluster_cmb_faces_vs_scrambled');
 save(fullfile(outputprefix, 'cluster_cmb_famous_vs_unfamiliar'), 'cluster_cmb_famous_vs_unfamiliar');
+
+%% visualisation
+
+% add the statistical mask to the data
+diff_cmb_faces_vs_scrambled_.mask = cluster_cmb_faces_vs_scrambled.mask;
+diff_cmb_famous_vs_unfamiliar.mask = cluster_cmb_famous_vs_unfamiliar.mask;
+
+cfg = [];
+cfg.layout = 'neuromag306cmb';
+cfg.parameter = 'avg';
+cfg.maskparameter = 'mask';
+figure
+ft_multiplotER(cfg, diff_cmb_faces_vs_scrambled);
+print('-dpng', fullfile(outputprefix, 'diff_cmb_faces_vs_scrambled_cluster.png'));
+
+figure
+ft_multiplotER(cfg, diff_cmb_famous_vs_unfamiliar);
+print('-dpng', fullfile(outputprefix, 'diff_cmb_famous_vs_unfamiliar.png'));
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% show full provenance of the final analysis
