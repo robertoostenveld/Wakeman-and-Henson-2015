@@ -1,2 +1,0 @@
-details_sub05
-analyze_single_subject
