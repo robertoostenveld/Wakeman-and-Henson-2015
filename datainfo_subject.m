@@ -9,19 +9,22 @@ subj_name = sprintf('sub-%02d', subject);
 
 %% specify the root location of all files (can be on a network or USB disk)
 if nargin<2 || isempty(dataprefix)
-  dataprefix = {
-    '/Volumes/BIOMAG2016/biomag2016'
-    '/Volumes/128GB/workshop/biomag2016'
-    '/project_ext/3010029/biomag2016'
-    '/project_qnap/3010000.02/practicalMEEG/ds000117'
-    };
-  
-  for i=1:numel(dataprefix)
-    if isdir(dataprefix{i})
-      dataprefix = dataprefix{i};
-      break
-    end % if
-  end % for
+%   dataprefix = {
+%     '/Volumes/BIOMAG2016/biomag2016'
+%     '/Volumes/128GB/workshop/biomag2016'
+%     '/project_ext/3010029/biomag2016'
+%     '/project_qnap/3010000.02/practicalMEEG/ds000117'
+%     };
+%   
+%   for i=1:numel(dataprefix)
+%     if isdir(dataprefix{i})
+%       dataprefix = dataprefix{i};
+%       break
+%     end % if
+%   end % for
+  f = mfilename('fullpath');
+  f = split(f, '/');
+  dataprefix = fullfile('/',f{1:end-2},'ds000117'); % assume that this function lives in a directory one-level down from the ds000117 dir
 else
   if ~contains(dataprefix, 'ds000117')
     dataprefix = fullfile(dataprefix, 'ds000117');
