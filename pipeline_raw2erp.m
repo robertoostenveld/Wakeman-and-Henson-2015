@@ -67,6 +67,7 @@ if readdata
     cfg.channel = {'all', '-MEG', '-EEG'};
     cfg.demean  = 'no';
     cfg.reref   = 'no';
+    cfg.bpfilter = 'no';
     data_other  = ft_preprocessing(cfg);
     
     cfg            = [];
