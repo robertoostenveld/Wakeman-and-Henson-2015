@@ -1,7 +1,7 @@
 definetrial = false;
-readdata    = false;
+readdata    = true;
 dotimelock  = false;
-
+doplot      = false;
 if definetrial
   
   trl = cell(6,1);
@@ -57,7 +57,7 @@ if readdata
     data_meg    = ft_preprocessing(cfg);
     
     % EEG specific settings
-    cfg.channel    = 'EEG';
+    cfg.channel    = {'EEG' '-EEG061' '-EEG062' '-EEG063' '-EEG064'}; % exclude EOG/ECG/etc hard coded assumed to be this list
     cfg.demean     = 'yes';
     cfg.reref      = 'yes';
     cfg.refchannel = 'all'; % average reference
