@@ -1,6 +1,6 @@
 definetrial = false;
-readdata    = true;
-dotimelock  = true;
+readdata    = false;
+dotimelock  = false;
 
 if definetrial
   
@@ -110,5 +110,14 @@ if dotimelock
 
   filename = fullfile(subj.outputpath, 'raw2erp', sprintf('%s_timelock', subj.name));
   save(filename, 'avg_famous', 'avg_unfamiliar', 'avg_scrambled', 'avg_faces');
+  
+end
+
+if doplot
+
+  filename = fullfile(subj.outputpath, 'raw2erp', sprintf('%s_timelock', subj.name));
+  load(filename, 'avg_famous', 'avg_unfamiliar', 'avg_scrambled', 'avg_faces');
+
+  
   
 end
