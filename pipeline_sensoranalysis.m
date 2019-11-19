@@ -2,6 +2,8 @@ definetrial = true;
 readdata    = true;
 dofreq_mtmconvol = true;
 dofreq_wavelet = true;
+doplot      = false;
+dofreq_singlechan = false;
 if definetrial
   
   trl = cell(6,1);
@@ -132,6 +134,67 @@ if dofreq_wavelet
   cfg.trials = find(data.trialinfo(:,1)==3);
   freq_scrambled = ft_freqanalysis(cfg, data);
   
-    filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_freq_wavelet', subj.name));
+  filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_freq_wavelet', subj.name));
   save(filename, 'freq_famous', 'freq_unfamiliar', 'freq_scrambled');
 end
+
+if doplot
+
+  cfg = [];
+  cfg.baseline     = [-0.6 -0.2];
+  cfg.baselinetype = 'absolute';
+  cfg.zlim         = [-5e-27 5e-27];
+  cfg.showlabels   = 'yes';
+  cfg.layout       = 'neuromag306mag_helmet.mat';
+  figure; ft_multiplotTFR(cfg, freqlow_famous);
+  
+  cfg = [];
+  cfg.baseline     = [-0.6 -0.2];
+  cfg.baselinetype = 'absolute';
+  cfg.maskstyle    = 'saturation';
+  cfg.zlim         = [-5e-27 5e-27];
+  cfg.channel      = 'MEG0731';
+  figure; ft_singleplotTFR(cfg, freqlow_famous);
+  
+  cfg = [];
+  cfg.baseline     = [-0.6 -0.2];
+  cfg.baselinetype = 'absolute';
+  cfg.xlim         = [0.6 0.8];
+  cfg.zlim         = [-5e-27 5e-27];
+  cfg.ylim         = [4 6];
+  cfg.marker       = 'on';
+  cfg.layout       = 'neuromag306mag_helmet.mat';
+  figure; ft_topoplotTFR(cfg, freqlow_famous);
+end
+
+if dofreq_singlechan
+  
+  cfg              = [];
+  cfg.output       = 'pow';
+  cfg.channel      = 'MEG0741';
+  cfg.method       = 'mtmconvol';
+  cfg.taper        = 'hanning';
+  cfg.foi          = 2:1:30;
+  cfg.t_ftimwin    = 7./cfg.foi;  % 7 cycles per time window
+  cfg.toi          = -0.8:0.05:1.5;
+  cfg.trials       = find(data.trialinfo(:,1)==1);
+  TFRhann7         = ft_freqanalysis(cfg, data);
+  cfg.t_ftimwin    = 4./cfg.foi;
+  TFRhann4         = ft_freqanalysis(cfg, data);
+  cfg.t_ftimwin    = 5./cfg.foi;
+  TFRhann5         = ft_freqanalysis(cfg, data);
+  cfg.t_ftimwin    = 10./cfg.foi;
+  TFRhann10         = ft_freqanalysis(cfg, data);
+  
+  
+  cfg              = [];
+  cfg.baseline     = [-0.5 -0.1];
+  cfg.baselinetype = 'relchange';
+  cfg.maskstyle    = 'saturation';
+  cfg.zlim         = [-1 1];
+  cfg.channel      = 'MEG0741';
+  cfg.interactive  = 'no';
+  figure; ft_singleplotTFR(cfg, TFRhann7);
+
+end
+
