@@ -91,9 +91,9 @@ if dofreq_mtmconvol
   cfg.trials = find(data.trialinfo(:,1)==3);
   freqlow_scrambled = ft_freqanalysis(cfg, data);
   
-  cfg.foi    = 30:2.5:80;
-  cfg.t_ftimwin = ones(1,numel(cfg.foi)).*0.25;
-  cfg.tapsmofrq = ones(1,numel(cfg.foi)).*8;
+  cfg.foi    = 30:5:80;
+  cfg.t_ftimwin = ones(1,numel(cfg.foi)).*0.2;
+  cfg.tapsmofrq = ones(1,numel(cfg.foi)).*10;
   cfg.taper     = 'dpss';
   
   cfg.trials = find(data.trialinfo(:,1)==1);
