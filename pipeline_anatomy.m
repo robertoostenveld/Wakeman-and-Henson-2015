@@ -114,6 +114,10 @@ end
 
 if makefigure
   
+  subj = datainfo_subject(15);
+  hdr  = ft_read_header(subj.megfile{1}, 'coilaccuracy', 0);
+  grad = ft_convert_units(hdr.grad, 'mm');
+  
   load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_headmodel', subj.name)));
   load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_sourcemodel', subj.name)));
   headmodel   = ft_convert_units(headmodel,   'mm');
@@ -122,8 +126,9 @@ if makefigure
   figure;hold on;
   ft_plot_mesh(sourcemodel, 'facecolor', [0.8 0.2 0.2]);
   ft_plot_headmodel(headmodel, 'edgecolor', 'none', 'facealpha', 0.3);
+  ft_plot_sens(grad);
   h = light; lighting gouraud; material dull;
-  set(gcf, 'color', [0.2 0.2 0.2]);
+
   
   % NOTE: sub-08 has a suboptimal sourcemodel, which is the result of a
   % failure of the default automatic freesurfer pipeline. This needs to be
