@@ -2,21 +2,16 @@ doforward  = true;
 dolcmv     = true;
 dovirtchan = true;
 doparcellate = true;
+percondition = true;
 if doforward
   
-  % obtain the necessary ingredients for obtaining a forward model
-  load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_headmodel', subj.name)));
-  load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_sourcemodel', subj.name)));
-  headmodel   = ft_convert_units(headmodel,   'm');
-  sourcemodel = ft_convert_units(sourcemodel, 'm');
-  sourcemodel.inside = sourcemodel.atlasroi>0;
-  
+  % load the sensor-level data
   filename = fullfile(subj.outputpath, 'raw2erp', sprintf('%s_data', subj.name));
   load(filename, 'data');
   
   % select the electrophysiological channels
   cfg         = [];
-  cfg.channel = {'MEG' 'EEG'};
+  cfg.channel = {'MEG'};
   data        = ft_selectdata(cfg, data);
   
   % select the 'baseline'
@@ -31,33 +26,90 @@ if doforward
   
   selmag  = ft_chantype(baseline_avg.label, 'megmag');
   selgrad = ft_chantype(baseline_avg.label, 'megplanar');
-  seleeg  = ft_chantype(baseline_avg.label, 'eeg');
+  
+  % let's have a look at the combined covariance matrix
+  C = baseline_avg.cov([find(selmag);find(selgrad)],[find(selmag);find(selgrad)]);
+  figure;imagesc(C);hold on;plot(102.5.*[1 1],[0 306],'w','linewidth',2);plot([0 306],102.5.*[1 1],'w','linewidth',2);
+  
+  % an SVD gives an indication of the numerical properties of a matrix
+  [u,s,v] = svd(baseline_avg.cov);
+  figure;plot(log10(diag(s)),'o');
+  
+  % the beamformer requires the mathematical inverse of the covariance
+  % matrix, how does this look?:
+  figure;imagesc(inv(C)); %-> this throws an error
+  figure;imagesc(pinv(C));
   
   [u,s_mag,v]  = svd(baseline_avg.cov(selmag,  selmag));
   [u,s_grad,v] = svd(baseline_avg.cov(selgrad, selgrad));
-  [u,s_eeg,v]  = svd(baseline_avg.cov(seleeg,  seleeg));
+  hold on
+  plot(log10(diag(s_grad)),'o');
+  plot(log10(diag(s_mag)),'o');
   
   d_mag = -diff(log10(diag(s_mag))); d_mag = d_mag./std(d_mag);
   kappa_mag = find(d_mag>4,1,'first');
   d_grad = -diff(log10(diag(s_grad))); d_grad = d_grad./std(d_grad);
   kappa_grad = find(d_grad>4,1,'first');
-  d_eeg = -diff(log10(diag(s_eeg))); d_eeg = d_eeg./std(d_eeg);
-  kappa_eeg = find(d_eeg>4,1,'first');
     
   cfg            = [];
   cfg.channel    = 'meg';
   cfg.kappa      = min(kappa_mag,kappa_grad);
   dataw_meg      = ft_denoise_prewhiten(cfg, data, baseline_avg);
-  cfg.kappa      = kappa_eeg;
-  dataw_eeg      = ft_denoise_prewhiten(cfg, data, baseline_avg);
   
+  % select the 'baseline'
+  cfg         = [];
+  cfg.latency = [-0.2 0];
+  baselinew   = ft_selectdata(cfg, dataw_meg);
+  
+  % compute the baseline covariance
+  cfg            = [];
+  cfg.covariance = 'yes';
+  baselinew_avg   = ft_timelockanalysis(cfg, baselinew);
+  
+  selmag  = ft_chantype(baselinew_avg.label, 'megmag');
+  selgrad = ft_chantype(baselinew_avg.label, 'megplanar');
+  
+  Cw = baselinew_avg.cov([find(selmag);find(selgrad)],[find(selmag);find(selgrad)]);
+  figure;imagesc(Cw); hold on;plot(102.5.*[1 1],[0 306],'w','linewidth',2);plot([0 306],102.5.*[1 1],'w','linewidth',2);
+ 
+  % compute the svd on the whitened covariance matrix
+  [u,s,v] = svd(baselinew_avg.cov);
+  figure;plot(log10(diag(s)),'o');
+  
+  
+%   % do a quick and dirty artifact rejection
+%   cfg = [];
+%   cfg.layout = 'neuromag306mag_helmet.mat';
+%   layout     = ft_prepare_layout(cfg);
+%   
+%   cfg = [];
+%   cfg.method = 'summary';
+%   cfg.layout = layout;
+%   dataw_meg  = ft_rejectvisual(cfg, dataw_meg);
+%   
+  cfg                = [];
+  cfg.preproc.baselinewindow = [-0.2 0];
+  cfg.preproc.demean = 'yes';
+  cfg.covariance     = 'yes';
+  tlckw              = ft_timelockanalysis(cfg, dataw_meg);
+  
+  
+  % obtain the necessary ingredients for obtaining a forward model
+  load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_headmodel', subj.name)));
+  load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_sourcemodel', subj.name)));
+  headmodel   = ft_convert_units(headmodel,   tlckw.grad.unit);
+  sourcemodel = ft_convert_units(sourcemodel, tlckw.grad.unit);
+  sourcemodel.inside = sourcemodel.atlasroi>0;
+  
+  % compute the forward model for the whitened data
   cfg             = [];
-  cfg.channel     = dataw_meg.label;
+  cfg.channel     = tlckw.label;
+  cfg.grad        = tlckw.grad;
   cfg.sourcemodel = sourcemodel;
   cfg.headmodel   = headmodel;
   cfg.method      = 'singleshell';
   cfg.singleshell.batchsize = 1000;
-  leadfield_meg   = ft_prepare_leadfield(cfg, dataw_meg);
+  leadfield_meg   = ft_prepare_leadfield(cfg); % NOTE: input of the whitened data ensures the correct sensor definition to be used
 end
 
 if dolcmv
@@ -65,12 +117,6 @@ if dolcmv
   if ~exist('leadfield_meg', 'var')
     error('the forward computation step needs to be performed in order to do inverse modelling');
   end
-  
-  cfg                = [];
-  cfg.preproc.baselinewindow = [-0.2 0];
-  cfg.preproc.demean = 'yes';
-  cfg.covariance     = 'yes';
-  tlckw              = ft_timelockanalysis(cfg, dataw_meg);
   
   [u,s,v] = svd(tlckw.cov);
   d       = -diff(log10(diag(s)));
@@ -83,14 +129,90 @@ if dolcmv
   cfg.lcmv.keepfilter = 'yes';
   cfg.lcmv.fixedori   = 'yes';
   cfg.lcmv.weightnorm = 'unitnoisegain';
-  cfg.lcmv.projectnoise = 'yes';
-  cfg.headmodel = headmodel;
+  cfg.headmodel   = headmodel;
   cfg.sourcemodel = leadfield_meg;
-  source = ft_sourceanalysis(cfg, tlckw);
+  source          = ft_sourceanalysis(cfg, tlckw);
   
   filename = fullfile(subj.outputpath, 'sourceanalysis', sprintf('%s_source_lcmv', subj.name));
   save(filename, 'source', 'tlckw');
+  
+  
+  wb_dir = fullfile(subj.outputpath, 'anatomy', 'freesurfer', subj.name, 'workbench');
+  filename = fullfile(wb_dir, sprintf('%s.L.inflated.8k_fs_LR.surf.gii', subj.name));
+  inflated = ft_read_headshape({filename strrep(filename, '.L.', '.R.')});
+  inflated = ft_determine_units(inflated);
+  inflated.coordsys = 'neuromag';
+  
+  cfg           = [];
+  cfg.clim      = [-2.5 2.5];
+  cfg.colormap  = 'parula';
+  cfg.parameter = 'mom';
+  
+  % replace the original dipole positions with those of the inflated
+  % surface
+  source.pos = inflated.pos;
+  figure;ft_sourceplot_interactive(cfg, source);
+  
 end
+
+if percondition
+  
+  if ~exist('source', 'var')
+    error('this step requires the source variable to exist');
+  end
+  
+  cfg                = [];
+  cfg.preproc.baselinewindow = [-0.2 0];
+  cfg.preproc.demean = 'yes';
+  cfg.covariance     = 'yes';
+  
+  cfg.trials = find(dataw_meg.trialinfo(:,1)==1);
+  tlckw_famous = ft_timelockanalysis(cfg, dataw_meg);
+  
+  cfg.trials = find(dataw_meg.trialinfo(:,1)==2);
+  tlckw_unfamiliar = ft_timelockanalysis(cfg, dataw_meg);
+  
+  cfg.trials = find(dataw_meg.trialinfo(:,1)==3);
+  tlckw_scrambled = ft_timelockanalysis(cfg, dataw_meg);
+ 
+  cfg                 = [];
+  cfg.method          = 'lcmv';
+  cfg.lcmv.kappa      = kappa;
+  cfg.lcmv.keepfilter = 'yes';
+  cfg.lcmv.fixedori   = 'yes';
+  cfg.lcmv.weightnorm = 'unitnoisegain';
+  cfg.headmodel   = headmodel;
+  cfg.sourcemodel = leadfield_meg;
+  cfg.sourcemodel.filter = source.avg.filter;
+  cfg.sourcemodel.filterdimord = source.avg.filterdimord;
+  source_famous     = ft_sourceanalysis(cfg, tlckw_famous);
+  source_unfamiliar = ft_sourceanalysis(cfg, tlckw_unfamiliar);
+  source_scrambled  = ft_sourceanalysis(cfg, tlckw_scrambled);
+  
+  cfg = [];
+  cfg.operation = 'abs';
+  cfg.parameter = 'mom';
+  source_famous = ft_math(cfg, source_famous);
+  source_unfamiliar = ft_math(cfg, source_unfamiliar);
+  source_scrambled  = ft_math(cfg, source_scrambled);
+  
+  cfg           = [];
+  cfg.parameter = 'mom';
+  figure;ft_sourceplot_interactive(cfg, source_famous, source_unfamiliar, source_scrambled);
+  
+  cfg = [];
+  cfg.operation = 'subtract';
+  cfg.parameter = 'mom';
+  source_diff   = ft_math(cfg, source_famous, source_scrambled);
+  
+  cfg           = [];
+  cfg.parameter = 'mom';
+  cfg.has_diff  = true;
+  figure;ft_sourceplot_interactive(cfg, source_famous, source_scrambled, source_diff);
+  
+  
+end
+
 
 if dovirtchan
    
@@ -100,7 +222,7 @@ if dovirtchan
  
   mom = cat(1,source.avg.mom{:});
   
-  sel = nearest(source.time,[0.15 0.2]);
+  sel = nearest(source.time,[0.16 0.17]);
   M   = zeros(size(sourcemodel.pos,1),1);
   M(sourcemodel.inside) = abs(mean(mom(:,sel(1):sel(2)),2));
   figure;ft_plot_mesh(sourcemodel, 'vertexcolor', M);
