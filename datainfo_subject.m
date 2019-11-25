@@ -9,19 +9,6 @@ subj_name = sprintf('sub-%02d', subject);
 
 %% specify the root location of all files (can be on a network or USB disk)
 if nargin<2 || isempty(dataprefix)
-%   dataprefix = {
-%     '/Volumes/BIOMAG2016/biomag2016'
-%     '/Volumes/128GB/workshop/biomag2016'
-%     '/project_ext/3010029/biomag2016'
-%     '/project_qnap/3010000.02/practicalMEEG/ds000117'
-%     };
-%   
-%   for i=1:numel(dataprefix)
-%     if isdir(dataprefix{i})
-%       dataprefix = dataprefix{i};
-%       break
-%     end % if
-%   end % for
   f = mfilename('fullpath');
   f = split(f, '/');
   dataprefix = fullfile('/',f{1:end-2},'ds000117'); % assume that this function lives in a directory one-level down from the ds000117 dir
@@ -33,10 +20,6 @@ end
 
 %% specify the location of the input and output files
 
-%outputpath = sprintf('%s/processed/Sub%02d', dataprefix, subject);
-%megpath    = sprintf('%s/raw/Sub%02d/MEEG/', dataprefix, subject);
-%mripath    = sprintf('%s/raw/Sub%02d/T1/',   dataprefix, subject);
-
 % with the data organized according to BIDS, the sss files are in the
 % derivatives folder.
 megpath    = fullfile(dataprefix, 'derivatives', 'meg_derivatives', subj_name, 'ses-meg', 'meg');
@@ -47,6 +30,19 @@ outputpath = fullfile(dataprefix, 'processed', subj_name);
 
 % for now write the results somewhere else than in the main BIDS folder
 if contains(outputpath, 'ds000117/'), outputpath = strrep(outputpath, 'ds000117/', ''); end
+
+if ~exist(fullfile(outputpath), 'dir')
+  mkdir(fullfile(outputpath));
+end
+
+subdirs = {'raw2erp' 'sensoranalysis' 'anatomy' 'sourceanalysis' 'groupanalysis'};
+for m = 1:numel(subdirs)
+  if ~exist(fullfile(outputpath, subdirs{m}), 'dir')
+    mkdir(fullfile(outputpath, subdirs{m}));
+  end
+end
+
+
 warning off;mkdir(outputpath);warning on
 
 %% specify the names of the MEG datasets
