@@ -1,8 +1,8 @@
-doforward  = false;
-dolcmv     = false;
+doforward  = true;
+dolcmv     = true;
 dovirtchan = false;
 doparcellate = true;
-percondition = false;
+percondition = true;
 if doforward
   
   % load the sensor-level data
@@ -132,7 +132,7 @@ if dolcmv
   cfg.headmodel   = headmodel;
   cfg.sourcemodel = leadfield_meg;
   source          = ft_sourceanalysis(cfg, tlckw);
-  
+ 
   filename = fullfile(subj.outputpath, 'sourceanalysis', subj.name, sprintf('%s_source_lcmv', subj.name));
   save(filename, 'source', 'tlckw');
   
@@ -312,6 +312,14 @@ if doparcellate
   avg_famous     = ft_math(cfg, avg_famous); 
   avg_unfamiliar = ft_math(cfg, avg_unfamiliar); 
   avg_scrambled  = ft_math(cfg, avg_scrambled); 
+  
+  avg_famous.cfg.previous.previous{1}.previous.callinfo.usercfg = removefields( ...
+    avg_famous.cfg.previous.previous{1}.previous.callinfo.usercfg, 'sourcemodel' );
+  avg_unfamiliar.cfg.previous.previous{1}.previous.callinfo.usercfg = removefields( ...
+    avg_unfamiliar.cfg.previous.previous{1}.previous.callinfo.usercfg, 'sourcemodel' );
+  avg_scrambled.cfg.previous.previous{1}.previous.callinfo.usercfg = removefields( ...
+    avg_scrambled.cfg.previous.previous{1}.previous.callinfo.usercfg, 'sourcemodel' );
+  
   
   filename = fullfile(subj.outputpath, 'sourceanalysis', subj.name, sprintf('%s_source_parc', subj.name));
   save(filename, 'avg_famous', 'avg_unfamiliar', 'avg_scrambled');
