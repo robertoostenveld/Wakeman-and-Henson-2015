@@ -50,10 +50,10 @@ if docoregistration
   cfg.coordsys     = 'neuromag';
   mri              = ft_volumerealign(cfg, mri);
   
-  mkdir(fullfile(subj.outputpath, 'anatomy', 'freesurfer'));
+  mkdir(fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer'));
   
   cfg              = [];
-  cfg.filename     = fullfile(subj.outputpath, 'anatomy', 'freesurfer', subj.name);
+  cfg.filename     = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer', subj.name);
   cfg.filetype     = 'mgz';
   cfg.parameter    = 'anatomy';
   ft_volumewrite(cfg, mri);
@@ -74,7 +74,7 @@ if doheadmodel
   cfg        = [];
   cfg.method = 'singleshell';
   headmodel  = ft_prepare_headmodel(cfg, seg);
-  save(fullfile(subj.outputpath, 'anatomy', sprintf('%s_headmodel', subj.name)), 'headmodel');
+  save(fullfile(subj.outputpath, 'anatomy', subj.name, sprintf('%s_headmodel', subj.name)), 'headmodel');
     
 end
 
@@ -82,7 +82,7 @@ if dofreesurfer
 
   [dum, ft_path] = ft_version; 
   scriptname = fullfile(ft_path,'bin','ft_freesurferscript.sh');
-  subj_dir   = fullfile(subj.outputpath, 'anatomy', 'freesurfer');
+  subj_dir   = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer');
   cmd_str    = sprintf('echo "%s %s %s" | qsub -l walltime=20:00:00,mem=8gb -N sub-%02d', scriptname, subj_dir, subj.name, subj.id);
   system(cmd_str);
 
@@ -92,23 +92,21 @@ if dopostfreesurfer
   
   [dum, ft_path] = ft_version; 
   scriptname = fullfile(ft_path,'bin','ft_postfreesurferscript.sh');
-  subj_dir   = fullfile(subj.outputpath, 'anatomy', 'freesurfer');
+  subj_dir   = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer');
   templ_dir  = '/home/language/jansch/projects/Pipelines/global/templates/standard_mesh_atlases';%fullfile(ft_path,'template','sourcemodel');
   cmd_str    = sprintf('echo "%s %s %s %s" | qsub -l walltime=20:00:00,mem=8gb -N sub-%02d', scriptname, subj_dir, subj.name, templ_dir, subj.id);
-  
-  %cmd_str    = sprintf('module load hcp-workbench; source %s %s %s %s', scriptname, subj_dir, subj_name, templ_dir);
   system(cmd_str);
 
 end
 
 if dosourcemodel2d
 
-  wb_dir = fullfile(subj.outputpath, 'anatomy', 'freesurfer', subj.name, 'workbench');
+  wb_dir = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer', subj.name, 'workbench');
   filename = fullfile(wb_dir, sprintf('%s.L.midthickness.8k_fs_LR.surf.gii', subj.name));
   sourcemodel = ft_read_headshape({filename strrep(filename, '.L.', '.R.')});
   sourcemodel = ft_determine_units(sourcemodel);
   sourcemodel.coordsys = 'neuromag';
-  save(fullfile(subj.outputpath, 'anatomy', sprintf('%s_sourcemodel', subj.name)), 'sourcemodel');
+  save(fullfile(subj.outputpath, 'anatomy', subj.name, sprintf('%s_sourcemodel', subj.name)), 'sourcemodel');
   
 end
 

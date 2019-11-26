@@ -1,12 +1,12 @@
-doforward  = true;
-dolcmv     = true;
-dovirtchan = true;
+doforward  = false;
+dolcmv     = false;
+dovirtchan = false;
 doparcellate = true;
-percondition = true;
+percondition = false;
 if doforward
   
   % load the sensor-level data
-  filename = fullfile(subj.outputpath, 'raw2erp', sprintf('%s_data', subj.name));
+  filename = fullfile(subj.outputpath, 'raw2erp', subj.name, sprintf('%s_data', subj.name));
   load(filename, 'data');
   
   % select the electrophysiological channels
@@ -95,8 +95,8 @@ if doforward
   
   
   % obtain the necessary ingredients for obtaining a forward model
-  load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_headmodel', subj.name)));
-  load(fullfile(subj.outputpath, 'anatomy', sprintf('%s_sourcemodel', subj.name)));
+  load(fullfile(subj.outputpath, 'anatomy', subj.name, sprintf('%s_headmodel', subj.name)));
+  load(fullfile(subj.outputpath, 'anatomy', subj.name, sprintf('%s_sourcemodel', subj.name)));
   headmodel   = ft_convert_units(headmodel,   tlckw.grad.unit);
   sourcemodel = ft_convert_units(sourcemodel, tlckw.grad.unit);
   sourcemodel.inside = sourcemodel.atlasroi>0;
@@ -133,11 +133,11 @@ if dolcmv
   cfg.sourcemodel = leadfield_meg;
   source          = ft_sourceanalysis(cfg, tlckw);
   
-  filename = fullfile(subj.outputpath, 'sourceanalysis', sprintf('%s_source_lcmv', subj.name));
+  filename = fullfile(subj.outputpath, 'sourceanalysis', subj.name, sprintf('%s_source_lcmv', subj.name));
   save(filename, 'source', 'tlckw');
   
   
-  wb_dir = fullfile(subj.outputpath, 'anatomy', 'freesurfer', subj.name, 'workbench');
+  wb_dir = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer', subj.name, 'workbench');
   filename = fullfile(wb_dir, sprintf('%s.L.inflated.8k_fs_LR.surf.gii', subj.name));
   inflated = ft_read_headshape({filename strrep(filename, '.L.', '.R.')});
   inflated = ft_determine_units(inflated);
@@ -185,16 +185,16 @@ if percondition
   cfg.sourcemodel = leadfield_meg;
   cfg.sourcemodel.filter = source.avg.filter;
   cfg.sourcemodel.filterdimord = source.avg.filterdimord;
-  source_famous     = ft_sourceanalysis(cfg, tlckw_famous);
-  source_unfamiliar = ft_sourceanalysis(cfg, tlckw_unfamiliar);
-  source_scrambled  = ft_sourceanalysis(cfg, tlckw_scrambled);
+  source_famous_orig     = ft_sourceanalysis(cfg, tlckw_famous);
+  source_unfamiliar_orig = ft_sourceanalysis(cfg, tlckw_unfamiliar);
+  source_scrambled_orig  = ft_sourceanalysis(cfg, tlckw_scrambled);
   
   cfg = [];
   cfg.operation = 'abs';
   cfg.parameter = 'mom';
-  source_famous = ft_math(cfg, source_famous);
-  source_unfamiliar = ft_math(cfg, source_unfamiliar);
-  source_scrambled  = ft_math(cfg, source_scrambled);
+  source_famous = ft_math(cfg, source_famous_orig);
+  source_unfamiliar = ft_math(cfg, source_unfamiliar_orig);
+  source_scrambled  = ft_math(cfg, source_scrambled_orig);
   
   cfg           = [];
   cfg.parameter = 'mom';
@@ -209,7 +209,6 @@ if percondition
   cfg.parameter = 'mom';
   cfg.has_diff  = true;
   figure;ft_sourceplot_interactive(cfg, source_famous, source_scrambled, source_diff);
-  
   
 end
 
@@ -264,41 +263,57 @@ if doparcellate
   
   load atlas_subparc374_8k.mat
   
-  % in principle, the function ft_sourceparcellate can be used for
-  % parcellating the source level data. Here, the intention is to create
-  % the parcellation based on an svd of the parcel-wise data covariance, as
-  % represented in the spatially filtered sensor covariance. this requires
-  % the sensor covariance to be sandwiched between the concatenated spatial
-  % filters for the given parcels. This is currently not supported by
-  % ft_sourceparcellate, so it will be done by hand here
-  F = zeros(374,numel(dataw_meg.label));
-  for k = 1:numel(atlas.parcellationlabel)
-    sel = atlas.parcellation==k;
-    f   = cat(1, source.avg.filter{sel});
-    C   = f*tlckw.cov*f';
-    [u,s,v] = svd(C);
-    F(k,:)  = u(:,1)'*f;
-  end
-  data_parc = keepfields(dataw_meg, {'time' 'fsample' 'trialinfo'});
-  assert(isequal(leadfield_meg.label, dataw_meg.label));
-  data_parc.trial = F*dataw_meg.trial;
-  data_parc.label = atlas.parcellationlabel;
+%   % in principle, the function ft_sourceparcellate can be used for
+%   % parcellating the source level data. Here, the intention is to create
+%   % the parcellation based on an svd of the parcel-wise data covariance, as
+%   % represented in the spatially filtered sensor covariance. this requires
+%   % the sensor covariance to be sandwiched between the concatenated spatial
+%   % filters for the given parcels. This is currently not supported by
+%   % ft_sourceparcellate, so it will be done by hand here
+%   F = zeros(374,numel(dataw_meg.label));
+%   for k = 1:numel(atlas.parcellationlabel)
+%     sel = atlas.parcellation==k;
+%     f   = cat(1, source.avg.filter{sel});
+%     C   = f*tlckw.cov*f';
+%     [u,s,v] = svd(C);
+%     F(k,:)  = u(:,1)'*f;
+%   end
+%   data_parc = keepfields(dataw_meg, {'time' 'fsample' 'trialinfo'});
+%   assert(isequal(leadfield_meg.label, dataw_meg.label));
+%   data_parc.trial = F*dataw_meg.trial;
+%   data_parc.label = atlas.parcellationlabel;
+%   
+%   cfg        = [];
+%   cfg.trials = find(data_parc.trialinfo(:,1)==1);
+%   cfg.preproc.demean = 'yes';
+%   cfg.preproc.baselinewindow = [-0.1 0];
+%   avg_famous = ft_timelockanalysis(cfg, data_parc);
+%   cfg.trials = find(data_parc.trialinfo(:,1)==2);
+%   avg_unfamiliar = ft_timelockanalysis(cfg, data_parc);
+%   
+%   cfg.trials = find(data_parc.trialinfo(:,1)==3);
+%   avg_scrambled = ft_timelockanalysis(cfg, data_parc);
+%   
+%   cfg.trials = find(data_parc.trialinfo(:,1)==1 | data_parc.trialinfo(:,1)==2);
+%   avg_faces  = ft_timelockanalysis(cfg, data_parc);
+%   
+
+  cfg = [];
+  cfg.method = 'eig';
+  cfg.parameter = 'mom';
+  atlas.pos = source_famous.pos;
+  avg_famous     = ft_sourceparcellate(cfg, source_famous,     atlas);
+  avg_unfamiliar = ft_sourceparcellate(cfg, source_unfamiliar, atlas);
+  avg_scrambled  = ft_sourceparcellate(cfg, source_scrambled,  atlas);
   
-  cfg        = [];
-  cfg.trials = find(data_parc.trialinfo(:,1)==1);
-  cfg.preproc.demean = 'yes';
-  cfg.preproc.baselinewindow = [-0.1 0];
-  avg_famous = ft_timelockanalysis(cfg, data_parc);
-  cfg.trials = find(data_parc.trialinfo(:,1)==2);
-  avg_unfamiliar = ft_timelockanalysis(cfg, data_parc);
+  cfg = [];
+  cfg.operation = 'abs';
+  cfg.parameter = 'mom';
+  avg_famous     = ft_math(cfg, avg_famous); 
+  avg_unfamiliar = ft_math(cfg, avg_unfamiliar); 
+  avg_scrambled  = ft_math(cfg, avg_scrambled); 
   
-  cfg.trials = find(data_parc.trialinfo(:,1)==3);
-  avg_scrambled = ft_timelockanalysis(cfg, data_parc);
-  
-  cfg.trials = find(data_parc.trialinfo(:,1)==1 | data_parc.trialinfo(:,1)==2);
-  avg_faces  = ft_timelockanalysis(cfg, data_parc);
-  
-  filename = fullfile(subj.outputpath, 'sourceanalysis', sprintf('%s_source_parc', subj.name));
-  save(filename, 'avg_famous', 'avg_unfamiliar', 'avg_scrambled', 'avg_faces');
+  filename = fullfile(subj.outputpath, 'sourceanalysis', subj.name, sprintf('%s_source_parc', subj.name));
+  save(filename, 'avg_famous', 'avg_unfamiliar', 'avg_scrambled');
   
 end

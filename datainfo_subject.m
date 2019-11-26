@@ -1,36 +1,28 @@
-function subj = datainfo_subject(subject, dataprefix)
+function subj = datainfo_subject(subject, datapath)
 
 if nargin<1 || isempty(subject)
-  % this is the default subjects
+  % this is the default subject
   subject = 15;
 end
   
 subj_name = sprintf('sub-%02d', subject);
 
-%% specify the root location of all files (can be on a network or USB disk)
-if nargin<2 || isempty(dataprefix)
+%% specify the root location of all files
+if nargin<2 || isempty(datapath)
   f = mfilename('fullpath');
   f = split(f, '/');
-  dataprefix = fullfile('/',f{1:end-2},'ds000117'); % assume that this function lives in a directory one-level down from the ds000117 dir
-else
-  if ~contains(dataprefix, 'ds000117')
-    dataprefix = fullfile(dataprefix, 'ds000117');
-  end
+  datapath = fullfile('/',f{1:end-2}); % assume that this function lives in a directory one-level down from the datadir
 end
 
 %% specify the location of the input and output files
 
 % with the data organized according to BIDS, the sss files are in the
 % derivatives folder.
-megpath    = fullfile(dataprefix, 'derivatives', 'meg_derivatives', subj_name, 'ses-meg', 'meg');
-mripath    = fullfile(dataprefix, subj_name, 'ses-mri', 'anat');
-eventspath = fullfile(dataprefix, subj_name, 'ses-meg', 'meg');
+megpath    = fullfile(datapath, 'derivatives', 'meg_derivatives', subj_name, 'ses-meg', 'meg');
+mripath    = fullfile(datapath, subj_name, 'ses-mri', 'anat');
+eventspath = fullfile(datapath, subj_name, 'ses-meg', 'meg');
 
-outputpath = fullfile(dataprefix, 'processed', subj_name);
-
-% for now write the results somewhere else than in the main BIDS folder
-if contains(outputpath, 'ds000117/'), outputpath = strrep(outputpath, 'ds000117/', ''); end
-
+outputpath = fullfile(datapath, 'derivatives');
 if ~exist(fullfile(outputpath), 'dir')
   mkdir(fullfile(outputpath));
 end
@@ -40,10 +32,11 @@ for m = 1:numel(subdirs)
   if ~exist(fullfile(outputpath, subdirs{m}), 'dir')
     mkdir(fullfile(outputpath, subdirs{m}));
   end
+  if ~exist(fullfile(outputpath, subdirs{m}, subj_name), 'dir')
+    mkdir(fullfile(outputpath, subdirs{m}, subj_name));
+  end
+    
 end
-
-
-warning off;mkdir(outputpath);warning on
 
 %% specify the names of the MEG datasets
 megfile = cell(6,1);
