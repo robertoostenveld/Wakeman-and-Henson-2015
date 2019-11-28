@@ -28,12 +28,8 @@ if definetrial
     endsample = min(round([event.sample]) + poststim, hdr.nSamples);
     offset    = -prestim.*ones(numel(begsample),1);
     
-    trl = [begsample(:) endsample(:) offset(:) trialcode(:) ones(numel(begsample),1).*run_nr];
-    
-    filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_trl_run%02d', subj.name, run_nr));
-    save(filename, 'trl');
-    clear trl;
-  end
+    subj.trl{run_nr} = [begsample(:) endsample(:) offset(:) trialcode(:) ones(numel(begsample),1).*run_nr];
+  end  
   
 end
 
@@ -41,12 +37,10 @@ if readdata
   
   rundata = cell(1,6);
   for run_nr = 1:6
-    filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_trl_run%02d', subj.name, run_nr));
-    load(filename);
     
     cfg         = [];
     cfg.dataset = subj.megfile{run_nr};
-    cfg.trl     = trl;
+    cfg.trl     = subj.trl{run_nr};
     
     % MEG specific settings
     cfg.channel = 'MEG';
@@ -65,14 +59,14 @@ if readdata
   data = ft_appenddata([], rundata{:});
   clear rundata;
   
-  filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_data', subj.name));
+  filename = fullfile(subj.outputpath, 'sensoranalysis', subj.name, sprintf('%s_data', subj.name));
   save(filename, 'data');
   
 end
 
 if dofreq_mtmconvol
  
-  filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_data', subj.name));
+  filename = fullfile(subj.outputpath, 'sensoranalysis', subj.name, sprintf('%s_data', subj.name));
   load(filename, 'data');
   
   cfg        = [];
@@ -107,14 +101,14 @@ if dofreq_mtmconvol
   cfg.trials = find(data.trialinfo(:,1)==3);
   freqhigh_scrambled = ft_freqanalysis(cfg, data);
   
-  filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_freq_mtmconvol', subj.name));
+  filename = fullfile(subj.outputpath, 'sensoranalysis', subj.name, sprintf('%s_freq_mtmconvol', subj.name));
   save(filename, 'freqlow_famous', 'freqlow_unfamiliar', 'freqlow_scrambled', 'freqhigh_famous', 'freqhigh_unfamiliar', 'freqhigh_scrambled');
   
 end
 
 if dofreq_wavelet
  
-  filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_data', subj.name));
+  filename = fullfile(subj.outputpath, 'sensoranalysis', subj.name, sprintf('%s_data', subj.name));
   load(filename, 'data');
   
   cfg        = [];
@@ -134,7 +128,7 @@ if dofreq_wavelet
   cfg.trials = find(data.trialinfo(:,1)==3);
   freq_scrambled = ft_freqanalysis(cfg, data);
   
-  filename = fullfile(subj.outputpath, 'sensoranalysis', sprintf('%s_freq_wavelet', subj.name));
+  filename = fullfile(subj.outputpath, 'sensoranalysis', subj.name, sprintf('%s_freq_wavelet', subj.name));
   save(filename, 'freq_famous', 'freq_unfamiliar', 'freq_scrambled');
 end
 
