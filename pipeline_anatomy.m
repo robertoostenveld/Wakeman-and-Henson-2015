@@ -57,7 +57,7 @@ if docoregistration
   cfg.filetype     = 'mgz';
   cfg.parameter    = 'anatomy';
   ft_volumewrite(cfg, mri);
- 
+  
 end
 
 if doheadmodel
@@ -75,32 +75,32 @@ if doheadmodel
   cfg.method = 'singleshell';
   headmodel  = ft_prepare_headmodel(cfg, seg);
   save(fullfile(subj.outputpath, 'anatomy', subj.name, sprintf('%s_headmodel', subj.name)), 'headmodel');
-    
+  
 end
 
 if dofreesurfer
-
-  [dum, ft_path] = ft_version; 
+  
+  [dum, ft_path] = ft_version;
   scriptname = fullfile(ft_path,'bin','ft_freesurferscript.sh');
   subj_dir   = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer');
   cmd_str    = sprintf('echo "%s %s %s" | qsub -l walltime=20:00:00,mem=8gb -N sub-%02d', scriptname, subj_dir, subj.name, subj.id);
   system(cmd_str);
-
+  
 end
 
 if dopostfreesurfer
   
-  [dum, ft_path] = ft_version; 
+  [dum, ft_path] = ft_version;
   scriptname = fullfile(ft_path,'bin','ft_postfreesurferscript.sh');
   subj_dir   = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer');
   templ_dir  = '/home/language/jansch/projects/Pipelines/global/templates/standard_mesh_atlases';%fullfile(ft_path,'template','sourcemodel');
   cmd_str    = sprintf('echo "%s %s %s %s" | qsub -l walltime=20:00:00,mem=8gb -N sub-%02d', scriptname, subj_dir, subj.name, templ_dir, subj.id);
   system(cmd_str);
-
+  
 end
 
 if dosourcemodel2d
-
+  
   wb_dir = fullfile(subj.outputpath, 'anatomy', subj.name, 'freesurfer', subj.name, 'workbench');
   filename = fullfile(wb_dir, sprintf('%s.L.midthickness.8k_fs_LR.surf.gii', subj.name));
   sourcemodel = ft_read_headshape({filename strrep(filename, '.L.', '.R.')});
@@ -126,7 +126,6 @@ if makefigure
   ft_plot_headmodel(headmodel, 'edgecolor', 'none', 'facealpha', 0.3);
   ft_plot_sens(grad);
   h = light; lighting gouraud; material dull;
-
   
   % NOTE: sub-08 has a suboptimal sourcemodel, which is the result of a
   % failure of the default automatic freesurfer pipeline. This needs to be

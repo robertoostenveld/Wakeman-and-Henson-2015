@@ -1,9 +1,14 @@
-definetrial = true;
-readdata    = true;
-dofreq_mtmconvol = true;
-dofreq_wavelet = true;
-doplot      = false;
+% this script does channel-level time-frequency analysis
+
+definetrial       = true;
+readdata          = true;
+dofreq_mtmconvol  = true;
+dofreq_wavelet    = true;
+doplot            = false;
 dofreq_singlechan = false;
+
+%%
+
 if definetrial
   
   trl = cell(6,1);
@@ -29,9 +34,11 @@ if definetrial
     offset    = -prestim.*ones(numel(begsample),1);
     
     subj.trl{run_nr} = [begsample(:) endsample(:) offset(:) trialcode(:) ones(numel(begsample),1).*run_nr];
-  end  
+  end
   
 end
+
+%%
 
 if readdata
   
@@ -64,8 +71,10 @@ if readdata
   
 end
 
+%%
+
 if dofreq_mtmconvol
- 
+  
   filename = fullfile(subj.outputpath, 'sensoranalysis', subj.name, sprintf('%s_data', subj.name));
   load(filename, 'data');
   
@@ -106,8 +115,10 @@ if dofreq_mtmconvol
   
 end
 
+%%
+
 if dofreq_wavelet
- 
+  
   filename = fullfile(subj.outputpath, 'sensoranalysis', subj.name, sprintf('%s_data', subj.name));
   load(filename, 'data');
   
@@ -132,8 +143,10 @@ if dofreq_wavelet
   save(filename, 'freq_famous', 'freq_unfamiliar', 'freq_scrambled');
 end
 
-if doplot
+%%
 
+if doplot
+  
   cfg = [];
   cfg.baseline     = [-0.6 -0.2];
   cfg.baselinetype = 'absolute';
@@ -160,6 +173,8 @@ if doplot
   cfg.layout       = 'neuromag306mag_helmet.mat';
   figure; ft_topoplotTFR(cfg, freqlow_famous);
 end
+
+%%
 
 if dofreq_singlechan
   
@@ -189,6 +204,5 @@ if dofreq_singlechan
   cfg.channel      = 'MEG0741';
   cfg.interactive  = 'no';
   figure; ft_singleplotTFR(cfg, TFRhann7);
-
+  
 end
-
